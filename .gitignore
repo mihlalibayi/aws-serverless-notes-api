@@ -14,4 +14,4 @@ venv/
 .vscode/
 .idea/
 
-echo "aws/" >> .gitignore
+aws/

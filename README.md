@@ -63,3 +63,10 @@ fields and notes that don't exist.
 Runs entirely within the AWS Free Tier. Lambda, API Gateway, and
 DynamoDB all have generous free limits that this project doesn't
 get close to.
+
+
+## API in action
+
+Creating a note and fetching it back from a live DynamoDB table:
+
+![API Test](screenshots/api-test.png)

@@ -47,16 +47,3 @@ Resources:
           Properties:
             Path: /notes
             Method: DELETE
-
-  # my DynamoDB table
-  NotesTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: notes-table
-      BillingMode: PAY_PER_REQUEST   # I only pay for what I use, no fixed cost
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S           # S means String
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH              # id is my primary key

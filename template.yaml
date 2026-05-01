@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+# a short description of what this whole project is
+Description: Serverless Notes API using Lambda, API Gateway and DynamoDB
+
+# values I can reuse across this file so I dont hardcode things
+Globals:
+  Function:
+    Timeout: 10                  # my Lambda will timeout after 10 seconds
+    Runtime: python3.11          # I am using Python 3.11
+    Environment:
+      Variables:
+        TABLE_NAME: notes-table  # I store the table name here so I dont hardcode it in my code
+
+# all the AWS resources I want SAM to create for me
+Resources:
+
+  # my Lambda function
+  NotesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: notes-api
+      CodeUri: src/              # my code lives in the src/ folder
+      Handler: handler.handler   # filename.functionname
+      Policies:
+        # this gives my Lambda permission to read and write to DynamoDB
+        - DynamoDBCrudPolicy:
+            TableName: notes-table
+
+      # these are the API Gateway routes that trigger my Lambda
+      Events:
+        CreateNote:
+          Type: Api
+          Properties:
+            Path: /notes
+            Method: POST
+
+        GetNote:
+          Type: Api
+          Properties:
+            Path: /notes
+            Method: GET
+
+        DeleteNote:
+          Type: Api
+          Properties:
+            Path: /notes
+            Method: DELETE
+
+  # my DynamoDB table
+  NotesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: notes-table
+      BillingMode: PAY_PER_REQUEST   # I only pay for what I use, no fixed cost
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S           # S means String
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH              # id is my primary key

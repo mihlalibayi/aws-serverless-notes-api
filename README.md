@@ -89,6 +89,24 @@ Runs entirely within the AWS Free Tier. Lambda, API Gateway, and
 DynamoDB all have generous free limits that this project doesn't
 get close to.
 
+## The setup in screenshots
+
+Lambda function deployed via SAM with API Gateway trigger:
+
+![Lambda Console](screenshots/lambda-console.png)
+
+API Gateway routes wired to the Lambda function:
+
+![API Gateway Routes](screenshots/api-gateway-routes.png)
+
+DynamoDB table with live data:
+
+![DynamoDB Table](screenshots/dynamodb-table.png)
+
+IAM execution role with DynamoDB access policy attached:
+
+![IAM Role](screenshots/iam-role.png)
+
 ## API in action
 
 Creating a note and fetching it back from a live DynamoDB table:

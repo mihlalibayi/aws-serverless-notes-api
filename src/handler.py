@@ -31,8 +31,18 @@ def handler(event, context):
 
 
 def create_note(event):
+    # if the body is missing or empty, return 400
+    # without this check, json.loads(None) would crash the Lambda
+    if not event.get("body"):
+        return response(400, {"error": "request body is required"})
+
     # the body arrives as a raw JSON string so I have to parse it first
-    body = json.loads(event["body"])
+    # if the JSON is malformed, json.loads raises an exception
+    # I catch it and return a clean 400 instead of crashing
+    try:
+        body = json.loads(event["body"])
+    except json.JSONDecodeError:
+        return response(400, {"error": "invalid JSON in request body"})
 
     print("Creating note with title:", body.get("title"))
 
@@ -41,13 +51,19 @@ def create_note(event):
         return response(400, {"error": "id, title and content are required"})
 
     # save the note to DynamoDB
-    table.put_item(
-        Item={
-            "id": body["id"],
-            "title": body["title"],
-            "content": body["content"]
-        }
-    )
+    # if DynamoDB has any issue I catch it and return 500 so the user
+    # gets a clear error instead of a cryptic crash
+    try:
+        table.put_item(
+            Item={
+                "id": body["id"],
+                "title": body["title"],
+                "content": body["content"]
+            }
+        )
+    except Exception as e:
+        print("DynamoDB error in create_note:", str(e))
+        return response(500, {"error": "could not save note"})
 
     print("Note created successfully")
 
@@ -62,7 +78,12 @@ def get_note(event):
     if not params or "id" not in params:
         print("No id provided, fetching all notes")
 
-        result = table.scan()
+        try:
+            result = table.scan()
+        except Exception as e:
+            print("DynamoDB error in scan:", str(e))
+            return response(500, {"error": "could not fetch notes"})
+
         notes = result["Items"]
 
         print("Found", len(notes), "notes")
@@ -73,7 +94,11 @@ def get_note(event):
     note_id = params["id"]
     print("Fetching note with id:", note_id)
 
-    result = table.get_item(Key={"id": note_id})
+    try:
+        result = table.get_item(Key={"id": note_id})
+    except Exception as e:
+        print("DynamoDB error in get_note:", str(e))
+        return response(500, {"error": "could not fetch note"})
 
     # .get() returns None safely if the note doesnt exist
     note = result.get("Item")
@@ -96,7 +121,11 @@ def delete_note(event):
     note_id = params["id"]
     print("Deleting note with id:", note_id)
 
-    table.delete_item(Key={"id": note_id})
+    try:
+        table.delete_item(Key={"id": note_id})
+    except Exception as e:
+        print("DynamoDB error in delete_note:", str(e))
+        return response(500, {"error": "could not delete note"})
 
     print("Note deleted successfully")
     return response(200, {"message": "note deleted", "id": note_id})

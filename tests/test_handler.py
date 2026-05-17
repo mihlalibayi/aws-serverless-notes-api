@@ -61,7 +61,7 @@ def test_create_note_missing_fields():
     assert "error" in body
 
 
-# GET tests 
+# GET tests
 def test_get_note_success():
     # I am simulating a GET request for a specific note by id
     fake_event = {
@@ -166,7 +166,7 @@ def test_delete_note_missing_id():
     assert "error" in body
 
 
-# unsupported method test 
+# unsupported method test
 
 def test_unsupported_method():
     # I am simulating a PUT request which my API doesnt support

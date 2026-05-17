@@ -61,6 +61,67 @@ def test_create_note_missing_fields():
     assert "error" in body
 
 
+def test_create_note_missing_body():
+    # I am simulating a POST request with no body at all
+    # this would crash the Lambda without proper null handling
+    fake_event = {
+        "httpMethod": "POST",
+        "queryStringParameters": None,
+        "body": None,
+        "headers": {}
+    }
+
+    response = handler.handler(fake_event, {})
+
+    # missing body should return 400 with a clear message
+    assert response["statusCode"] == 400
+    body = json.loads(response["body"])
+    assert "body is required" in body["error"]
+
+
+def test_create_note_invalid_json():
+    # I am simulating a POST request with malformed JSON in the body
+    # without try/except this would crash the Lambda
+    fake_event = {
+        "httpMethod": "POST",
+        "queryStringParameters": None,
+        "body": "{ this is not valid json",
+        "headers": {}
+    }
+
+    response = handler.handler(fake_event, {})
+
+    # invalid JSON should return 400 with a clear message
+    assert response["statusCode"] == 400
+    body = json.loads(response["body"])
+    assert "invalid JSON" in body["error"]
+
+
+def test_create_note_dynamodb_error():
+    # I am simulating what happens when DynamoDB itself fails
+    # for example throttling, network issue, or permission error
+    fake_event = {
+        "httpMethod": "POST",
+        "queryStringParameters": None,
+        "body": json.dumps({
+            "id": "001",
+            "title": "Grocery list",
+            "content": "Milk, eggs"
+        }),
+        "headers": {}
+    }
+
+    # side_effect makes the mock raise an exception instead of returning normally
+    # this simulates DynamoDB throwing an error
+    with patch.object(handler.table, "put_item", side_effect=Exception("DynamoDB failed")):
+        response = handler.handler(fake_event, {})
+
+    # DynamoDB failure should return 500 not crash the Lambda
+    assert response["statusCode"] == 500
+    body = json.loads(response["body"])
+    assert "could not save note" in body["error"]
+
+
 # GET tests
 def test_get_note_success():
     # I am simulating a GET request for a specific note by id

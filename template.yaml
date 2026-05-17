@@ -11,7 +11,9 @@ Globals:
     Runtime: python3.11          # I am using Python 3.11
     Environment:
       Variables:
-        TABLE_NAME: notes-table  # I store the table name here so I dont hardcode it in my code
+        # I reference the table resource directly so there is one source of truth
+        # if I rename the table, I only change it in one place
+        TABLE_NAME: !Ref NotesTable
 
 # all the AWS resources I want SAM to create for me
 Resources:
@@ -25,8 +27,9 @@ Resources:
       Handler: handler.handler   # filename.functionname
       Policies:
         # this gives my Lambda permission to read and write to DynamoDB
+        # scoped to only this specific table — principle of least privilege
         - DynamoDBCrudPolicy:
-            TableName: notes-table
+            TableName: !Ref NotesTable
 
       # these are the API Gateway routes that trigger my Lambda
       Events:
@@ -47,3 +50,17 @@ Resources:
           Properties:
             Path: /notes
             Method: DELETE
+
+  # my DynamoDB table
+  # part of the same stack as Lambda so the whole project deploys together
+  NotesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: notes-table
+      BillingMode: PAY_PER_REQUEST   # I only pay for what I use, no fixed cost
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S           # S means String
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH              # id is my primary key
